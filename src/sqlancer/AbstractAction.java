@@ -1,11 +1,13 @@
 package sqlancer;
 
 import sqlancer.common.query.Query;
+import sqlancer.common.query.SQLQueryAdapter;
+
+import java.util.List;
 
 public interface AbstractAction<G> {
 
     Query<?> getQuery(G globalState) throws Exception;
-
     /**
      * Specifies whether it makes sense to request a {@link Query}, when the previous call to {@link #getQuery(Object)}
      * returned a query that failed executing.
@@ -17,3 +19,4 @@ public interface AbstractAction<G> {
     }
 
 }
+

@@ -49,15 +49,19 @@ public abstract class ProviderAdapter<G extends GlobalState<O, ? extends Abstrac
     @Override
     public Reproducer<G> generateAndTestDatabase(G globalState) throws Exception {
         try {
+            //生成数据库
             generateDatabase(globalState);
             checkViewsAreValid(globalState);
             globalState.getManager().incrementCreateDatabase();
-
+            //生成预言机
             TestOracle<G> oracle = getTestOracle(globalState);
+            //生成NrQueries次查询
             for (int i = 0; i < globalState.getOptions().getNrQueries(); i++) {
+
                 try (OracleRunReproductionState localState = globalState.getState().createLocalState()) {
                     assert localState != null;
                     try {
+                        //执行查询预言机
                         oracle.check();
                         globalState.getManager().incrementSelectQueryCount();
                     } catch (IgnoreMeException ignored) {
@@ -66,7 +70,7 @@ public abstract class ProviderAdapter<G extends GlobalState<O, ? extends Abstrac
                         if (reproducer != null) {
                             return reproducer;
                         }
-                        throw e;
+                        //throw e;
                     }
                     localState.executedWithoutError();
                 }

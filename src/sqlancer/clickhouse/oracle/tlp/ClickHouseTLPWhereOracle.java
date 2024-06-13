@@ -18,7 +18,7 @@ public class ClickHouseTLPWhereOracle extends ClickHouseTLPBase {
         super(state);
         ClickHouseErrors.addExpectedExpressionErrors(errors);
     }
-
+    //WHERE的TLP预言机
     @Override
     public void check() throws SQLException {
         super.check();
@@ -26,15 +26,16 @@ public class ClickHouseTLPWhereOracle extends ClickHouseTLPBase {
             select.setOrderByClauses(IntStream.range(0, 1 + Randomly.smallNumber())
                     .mapToObj(i -> gen.generateExpressionWithColumns(columns, 5)).collect(Collectors.toList()));
         }
+        //原始查询的字符串形式和结果
         String originalQueryString = ClickHouseVisitor.asString(select);
+        System.out.println(originalQueryString);
         List<String> resultSet = ComparatorHelper.getResultSetFirstColumnAsString(originalQueryString, errors, state);
-
         boolean orderBy = Randomly.getBooleanWithRatherLowProbability();
         if (orderBy) {
             select.setOrderByClauses(IntStream.range(0, 1 + Randomly.smallNumber())
                     .mapToObj(i -> gen.generateExpressionWithColumns(columns, 5)).collect(Collectors.toList()));
         }
-
+        //分为三个部分
         select.setWhereClause(predicate);
         String firstQueryString = ClickHouseVisitor.asString(select);
         select.setWhereClause(negatedPredicate);
@@ -42,8 +43,10 @@ public class ClickHouseTLPWhereOracle extends ClickHouseTLPBase {
         select.setWhereClause(isNullPredicate);
         String thirdQueryString = ClickHouseVisitor.asString(select);
         List<String> combinedString = new ArrayList<>();
+        //分区查询结果
         List<String> secondResultSet = ComparatorHelper.getCombinedResultSet(firstQueryString, secondQueryString,
                 thirdQueryString, combinedString, !orderBy, state, errors);
+        //比较是否相等
         ComparatorHelper.assumeResultSetsAreEqual(resultSet, secondResultSet, originalQueryString, combinedString,
                 state);
     }

@@ -7,6 +7,12 @@ import org.junit.jupiter.api.Test;
 
 import sqlancer.Main;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class TestClickHouse {
 
     @Test
@@ -25,10 +31,12 @@ public class TestClickHouse {
         String clickHouseAvailable = System.getenv("CLICKHOUSE_AVAILABLE");
         boolean clickHouseIsAvailable = clickHouseAvailable != null && clickHouseAvailable.equalsIgnoreCase("true");
         assumeTrue(clickHouseIsAvailable);
+        //执行executeMain并检测结果是否为0
         assertEquals(0,
                 Main.executeMain("--timeout-seconds", "60", "--num-queries", TestConfig.NUM_QUERIES, "--num-threads",
                         "5", "--username", "default", "--password", "", "--database-prefix", "T2_", "clickhouse",
                         "--oracle", "TLPWhere"));
+
     }
 
     @Test
@@ -162,5 +170,37 @@ public class TestClickHouse {
                         "--num-queries", TestConfig.NUM_QUERIES, "--num-threads", "1", "--username", "default",
                         "--password", "", "--database-prefix", "T14_", "clickhouse", "--oracle", "NoREC"));
     }
-
+    /**
+     * 自定义差分测试
+     */
+    @Test
+    public void testClickHouseDifferential() {
+        String clickHouseAvailable = System.getenv("CLICKHOUSE_AVAILABLE");
+        boolean clickHouseIsAvailable = clickHouseAvailable != null && clickHouseAvailable.equalsIgnoreCase("true");
+        assumeTrue(clickHouseIsAvailable);
+        assertEquals(0,
+                Main.executeMain("--log-each-select", "true", "--print-failed", "true", "--timeout-seconds", "60", "--num-queries", "1000",
+                        "--num-threads", "10","--username", "default", "--password", "", "--database-prefix", "MT0_",
+                        "clickhouse", "--oracle", "Diff", "--ref-engine", "Log"));
+    }
+    @Test
+    public  void test(){
+        String clickHouseAvailable = System.getenv("CLICKHOUSE_AVAILABLE");
+        boolean clickHouseIsAvailable = clickHouseAvailable != null && clickHouseAvailable.equalsIgnoreCase("true");
+        assumeTrue(clickHouseIsAvailable);
+        int i=0;
+        while (i<10) {
+            try {
+                assertEquals(0,
+                        Main.executeMain("--log-each-select", "true", "--print-failed", "true", "--timeout-seconds", "60", "--num-queries", "1000", "--max-num-inserts", "100",
+                                "--num-threads", "8", "--username", "default", "--password", "", "--database-prefix", "MT" + i + "_",
+                                "clickhouse", "--oracle", "Diff", "--ref-engine", "Log"));
+                System.out.println("第 " + i + " 遍执行结束。");
+            } catch (Exception e) {
+                e.printStackTrace();
+                break;
+            }
+            ++i;
+        }
+    }
 }

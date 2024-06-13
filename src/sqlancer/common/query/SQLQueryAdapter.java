@@ -114,10 +114,12 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
         Throwable ex = e;
 
         while (ex != null) {
+//            System.out.printf("异常： %s%n", ex.getMessage());
             if (expectedErrors.errorIsExpected(ex.getMessage())) {
                 return;
             } else {
                 ex = ex.getCause();
+
             }
         }
 
@@ -137,6 +139,7 @@ public class SQLQueryAdapter extends Query<SQLConnection> {
             s = globalState.getConnection().createStatement();
         }
         ResultSet result;
+        //执行查询
         try {
             if (fills.length > 0) {
                 result = ((PreparedStatement) s).executeQuery();

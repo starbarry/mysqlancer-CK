@@ -17,6 +17,9 @@ public class ClickHouseUnaryPrefixOperation extends ClickHouseExpression
         this.expression = expression;
     }
 
+    /**
+     * 一元前缀运算符函数，包括NOT和求负。
+     */
     public enum ClickHouseUnaryPrefixOperator implements Operator {
         NOT("NOT") {
             @Override
@@ -38,6 +41,7 @@ public class ClickHouseUnaryPrefixOperation extends ClickHouseExpression
                 throw new AssertionError(constant);
             }
         };
+
 
         private String s;
 

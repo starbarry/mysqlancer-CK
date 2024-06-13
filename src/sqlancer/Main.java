@@ -7,6 +7,8 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,11 +53,13 @@ import sqlancer.yugabyte.ysql.YSQLProvider;
 
 public final class Main {
 
-    public static final File LOG_DIRECTORY = new File("logs");
+    public static final File LOG_DIRECTORY = new File("logs"+ LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
     public static volatile AtomicLong nrQueries = new AtomicLong();
     public static volatile AtomicLong nrDatabases = new AtomicLong();
     public static volatile AtomicLong nrSuccessfulActions = new AtomicLong();
     public static volatile AtomicLong nrUnsuccessfulActions = new AtomicLong();
+    public static volatile AtomicLong nrEmptyRes = new AtomicLong();
+    public static volatile AtomicLong nrNoneEmptyRes = new AtomicLong();
     public static volatile AtomicLong threadsShutdown = new AtomicLong();
     static boolean progressMonitorStarted;
 
@@ -83,7 +87,6 @@ public final class Main {
         private static final List<String> INITIALIZED_PROVIDER_NAMES = new ArrayList<>();
         private final boolean logEachSelect;
         private final boolean logQueryPlan;
-
         private final boolean useReducer;
         private final DatabaseProvider<?, ?, ?> databaseProvider;
 
@@ -108,6 +111,7 @@ public final class Main {
 
         public StateLogger(String databaseName, DatabaseProvider<?, ?, ?> provider, MainOptions options) {
             File dir = new File(LOG_DIRECTORY, provider.getDBMSName());
+
             if (dir.exists() && !dir.isDirectory()) {
                 throw new AssertionError(dir);
             }
@@ -352,7 +356,7 @@ public final class Main {
             this.globalState = globalState;
         }
 
-        public boolean execute(Query<C> q, String... fills) throws Exception {
+        public boolean execute(@org.jetbrains.annotations.NotNull Query<C> q, String... fills) throws Exception {
             boolean success;
             success = q.execute(globalState, fills);
             Main.nrSuccessfulActions.addAndGet(1);
@@ -371,6 +375,7 @@ public final class Main {
         }
 
         public void incrementSelectQueryCount() {
+
             Main.nrQueries.addAndGet(1);
         }
 
@@ -453,6 +458,7 @@ public final class Main {
                 if (options.enableQPG()) {
                     provider.generateAndTestDatabaseWithQueryPlanGuidance(state);
                 } else {
+                    //核心测试接口
                     reproducer = provider.generateAndTestDatabase(state);
                 }
                 try {
@@ -564,8 +570,13 @@ public final class Main {
     }
 
     public static int executeMain(String... args) throws AssertionError {
+
+        //参数解析//
+        //注册一个新的provider类组（用以提供所有DBMS接口）
         List<DatabaseProvider<?, ?, ?>> providers = getDBMSProviders();
+        //建立一个名称到executor的映射
         Map<String, DBMSExecutorFactory<?, ?, ?>> nameToProvider = new HashMap<>();
+        //设置一个命令行解析器，通用命令为options，添加所有DBMS的命令行格式
         MainOptions options = new MainOptions();
         Builder commandBuilder = JCommander.newBuilder().addObject(options);
         for (DatabaseProvider<?, ?, ?> provider : providers) {
@@ -576,6 +587,7 @@ public final class Main {
         }
         JCommander jc = commandBuilder.programName("SQLancer").build();
         jc.parse(args);
+        //完成参数解析
 
         if (jc.getParsedCommand() == null || options.isHelp()) {
             jc.usage();
@@ -584,6 +596,7 @@ public final class Main {
 
         Randomly.initialize(options);
         if (options.printProgressInformation()) {
+            //打开监视器，记录日志
             startProgressMonitor();
             if (options.printProgressSummary()) {
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -598,6 +611,10 @@ public final class Main {
                                 formatInteger(nrSuccessfulActions.get()) + " successfully-executed statements");
                         System.out.println(
                                 formatInteger(nrUnsuccessfulActions.get()) + " unsuccessfuly-executed statements");
+                        System.out.println(
+                                formatInteger(nrEmptyRes.get()) + " empty-set queries");
+                        System.out.println(
+                                formatInteger(nrNoneEmptyRes.get()) + " none-empty-set queries");
                     }
 
                     private String formatInteger(long intValue) {
@@ -616,6 +633,7 @@ public final class Main {
 
         if (options.performConnectionTest()) {
             try {
+                //测试连接
                 executorFactory.getDBMSExecutor(options.getDatabasePrefix() + "connectiontest", new Randomly())
                         .testConnection();
             } catch (Exception e) {
@@ -626,7 +644,7 @@ public final class Main {
             }
         }
         final AtomicBoolean someOneFails = new AtomicBoolean(false);
-
+        //开启TotalNumberTires个进程用于测试
         for (int i = 0; i < options.getTotalNumberTries(); i++) {
             final String databaseName = options.getDatabasePrefix() + i;
             final long seed;
@@ -635,6 +653,7 @@ public final class Main {
             } else {
                 seed = options.getRandomSeed() + i;
             }
+            //异步执行一个线程，调用括号内匿名执行。这个线程用于发起多个创建数据库的线程
             execService.execute(new Runnable() {
 
                 @Override
@@ -647,6 +666,7 @@ public final class Main {
                     Randomly r = new Randomly(seed);
                     try {
                         int maxNrDbs = options.getMaxGeneratedDatabases();
+                        //在每个父线程中调用MaxGeneratedDatabases个生成数据库的子线程
                         // run without a limit if maxNrDbs == -1
                         for (int i = 0; i < maxNrDbs || maxNrDbs == -1; i++) {
                             Boolean continueRunning = run(options, execService, executorFactory, r, databaseName);
@@ -662,11 +682,12 @@ public final class Main {
                         }
                     }
                 }
-
+                //生成数据库的run函数
                 private boolean run(MainOptions options, ExecutorService execService,
                         DBMSExecutorFactory<?, ?, ?> executorFactory, Randomly r, final String databaseName) {
                     DBMSExecutor<?, ?, ?> executor = executorFactory.getDBMSExecutor(databaseName, r);
                     try {
+                        //核心接口
                         executor.run();
                         return true;
                     } catch (IgnoreMeException e) {
@@ -788,6 +809,7 @@ public final class Main {
                         / (nrSuccessfulActions.get() + nrUnsuccessfulActions.get()));
                 DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 Date date = new Date();
+                //输出查询情况
                 System.out.println(String.format(
                         "[%s] Executed %d queries (%d queries/s; %.2f/s dbs, successful statements: %2d%%). Threads shut down: %d.",
                         dateFormat.format(date), currentNrQueries, (int) throughput, throughputDbs,

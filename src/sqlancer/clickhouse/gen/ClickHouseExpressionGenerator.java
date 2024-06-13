@@ -53,6 +53,10 @@ public class ClickHouseExpressionGenerator
         UNARY_POSTFIX
     }
 
+    /**
+     * 随机生成CK表达式
+     * @param remainingDepth 所需生成的深度
+     */
     public ClickHouseExpression generateExpressionWithColumns(List<ClickHouseColumnReference> columns,
             int remainingDepth) {
         if (columns.isEmpty() || remainingDepth <= 2 && Randomly.getBooleanWithRatherLowProbability()) {

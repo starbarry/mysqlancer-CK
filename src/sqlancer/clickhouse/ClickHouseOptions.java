@@ -11,6 +11,7 @@ import sqlancer.DBMSSpecificOptions;
 import sqlancer.OracleFactory;
 import sqlancer.clickhouse.ClickHouseOptions.ClickHouseOracleFactory;
 import sqlancer.clickhouse.ClickHouseProvider.ClickHouseGlobalState;
+import sqlancer.clickhouse.oracle.diff.ClickHouseDiff;
 import sqlancer.clickhouse.oracle.norec.ClickHouseNoRECOracle;
 import sqlancer.clickhouse.oracle.tlp.ClickHouseTLPAggregateOracle;
 import sqlancer.clickhouse.oracle.tlp.ClickHouseTLPDistinctOracle;
@@ -26,13 +27,21 @@ public class ClickHouseOptions implements DBMSSpecificOptions<ClickHouseOracleFa
     public static final int DEFAULT_PORT = 8123;
 
     @Parameter(names = "--oracle")
-    public List<ClickHouseOracleFactory> oracle = Arrays.asList(ClickHouseOracleFactory.TLPWhere);
+    public List<ClickHouseOracleFactory> oracle = Arrays.asList(ClickHouseOracleFactory.Diff);
 
     @Parameter(names = { "--test-joins" }, description = "Allow the generation of JOIN clauses", arity = 1)
     public boolean testJoins = true;
 
     @Parameter(names = { "--analyzer" }, description = "Enable analyzer in ClickHouse", arity = 1)
     public boolean enableAnalyzer = true;
+
+    //自定义的指定差分引擎选项
+    @Parameter(names = "--ref-engine", description = "Specify the reference engine for differential testing.")
+    private String refEngine = "Log"; //NOPMD
+
+    public String getRef_engine() {
+        return refEngine;
+    }
 
     public enum ClickHouseOracleFactory implements OracleFactory<ClickHouseGlobalState> {
         TLPWhere {
@@ -70,8 +79,16 @@ public class ClickHouseOptions implements DBMSSpecificOptions<ClickHouseOracleFa
             public TestOracle<ClickHouseGlobalState> create(ClickHouseGlobalState globalState) throws SQLException {
                 return new ClickHouseNoRECOracle(globalState);
             }
+        },
+        /*
+         * 差分测试选项
+         */
+        Diff {
+            @Override
+            public TestOracle<ClickHouseGlobalState> create(ClickHouseGlobalState globalState) throws SQLException {
+                return new ClickHouseDiff(globalState);
+            }
         };
-
     }
 
     @Override

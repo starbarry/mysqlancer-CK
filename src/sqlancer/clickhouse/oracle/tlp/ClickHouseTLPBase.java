@@ -38,11 +38,14 @@ public class ClickHouseTLPBase extends TernaryLogicPartitioningOracleBase<ClickH
     }
 
     @Override
+    //check的CK父类
     public void check() throws SQLException {
         gen = new ClickHouseExpressionGenerator(state);
         schema = state.getSchema();
         select = new ClickHouseSelect();
+        //获取非空表列表
         List<ClickHouseTable> tables = schema.getRandomTableNonEmptyTables().getTables();
+        //随机挑选表
         ClickHouseTableReference table = new ClickHouseTableReference(
                 tables.get((int) Randomly.getNotCachedInteger(0, tables.size())),
                 Randomly.getBoolean() ? "left" : null);

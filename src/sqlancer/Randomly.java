@@ -111,10 +111,20 @@ public final class Randomly {
     public static <T> T fromList(List<T> list) {
         return list.get((int) getNextLong(0, list.size()));
     }
-
+    /**
+     * 从options中返回随机类型
+     */
     @SafeVarargs
     public static <T> T fromOptions(T... options) {
+
         return options[getNextInt(0, options.length)];
+    }
+    /**
+     * 自定义的随机操作函数（去除toUInt操作）
+     */
+    @SafeVarargs
+    public static <T> T fromOptions_excepttoInt(T... options) {
+        return options[getNextInt(0, options.length-1)];
     }
 
     @SafeVarargs

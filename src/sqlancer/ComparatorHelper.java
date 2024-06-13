@@ -54,6 +54,7 @@ public final class ComparatorHelper {
         SQLancerResultSet result = null;
         try {
             result = q.executeAndGet(state);
+            //查询结果为空时抛出忽略异常
             if (result == null) {
                 throw new IgnoreMeException();
             }
