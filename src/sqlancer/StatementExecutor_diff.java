@@ -32,7 +32,7 @@ public class StatementExecutor_diff<G extends GlobalState<?, ?, ?>, A extends Ab
         this.queryConsumer = queryConsumer;
     }
 
-    /*
+    /**
      * 根据预定义信息决定每一个类型的操作次数，并执行操作
      */
     @SuppressWarnings("unchecked")

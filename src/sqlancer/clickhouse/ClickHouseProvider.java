@@ -99,7 +99,7 @@ public class ClickHouseProvider extends SQLProviderAdapter<ClickHouseGlobalState
 
     }
 
-    /*
+    /**
      * 生成数据库函数，在一个数据库中生成一定数量的表，引擎随机，并填充数据
      */
     @Override
@@ -144,7 +144,7 @@ public class ClickHouseProvider extends SQLProviderAdapter<ClickHouseGlobalState
 
     }
 
-    /*
+    /**
      * CK的创建数据库函数
      */
     @Override

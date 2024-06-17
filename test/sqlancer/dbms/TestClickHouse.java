@@ -180,9 +180,12 @@ public class TestClickHouse {
         assumeTrue(clickHouseIsAvailable);
         assertEquals(0,
                 Main.executeMain("--log-each-select", "true", "--print-failed", "true", "--timeout-seconds", "60", "--num-queries", "1000",
-                        "--num-threads", "10","--username", "default", "--password", "", "--database-prefix", "MT0_",
+                        "--num-threads", "1", "--username", "default", "--password", "", "--database-prefix", "MT0_",
                         "clickhouse", "--oracle", "Diff", "--ref-engine", "Log"));
     }
+    /**
+     * 持续差分测试
+     */
     @Test
     public  void test(){
         String clickHouseAvailable = System.getenv("CLICKHOUSE_AVAILABLE");

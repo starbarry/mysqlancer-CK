@@ -15,11 +15,11 @@ public class ClickHouseUnaryFunctionOperation extends ClickHouseExpression
     }
 
     /**
-     * 一元函数运算，扩充toUInt8
+     * 一元函数运算，扩充udf（返回自身）, toUInt8
      */
     public enum ClickHouseUnaryFunctionOperator implements Operator {
         EXP("exp"), SQRT("sqrt"), ERF("erf"), SIN("sin"), COS("cos"), TAN("tan"), SIGN("sign"), RADIANS("radians"),
-        LOG("log"), ABS("abs"), TOUINT8("toUInt8");
+        LOG("log"), ABS("abs"), UDF("udf"), TOUINT8("toUInt8");
 
         private String textRepresentation;
 

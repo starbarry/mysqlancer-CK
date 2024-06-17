@@ -14,6 +14,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -39,9 +40,11 @@ public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseG
 
     }
 
+    //等待增加udf, groupby,
     @Override
     public void check() throws SQLException {
         ClickHouseExpressionGenerator gen = new ClickHouseExpressionGenerator(state);
+        //等待增加udf, groupby,
         //获取所有表集合tables，并随机挑选一张表table
         List<ClickHouseSchema.ClickHouseTable> tables = schema.getRandomTableNonEmptyTables().getTables();
         ClickHouseTableReference table = new ClickHouseTableReference(
@@ -70,12 +73,16 @@ public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseG
         select.setFromClause(table);
         select.setWhereClause(randomWhereCondition);
         select.setJoinClauses(joinStatements);
+
+        boolean ifDITINCT = Randomly.getBoolean();
+        boolean ifaggregate = Randomly.getBoolean();
+
         //随机决定是否DISTINCT
-        if (Randomly.getBoolean()) {
+        if (ifDITINCT) {
             select.setSelectType(ClickHouseSelect.SelectType.DISTINCT);
         }
         //随机增加聚合函数
-        if (Randomly.getBoolean()){
+        if (ifaggregate) {
             ClickHouseAggregate.ClickHouseAggregateFunction windowFunction = Randomly.fromOptions(
                     ClickHouseAggregate.ClickHouseAggregateFunction.MIN,
                     ClickHouseAggregate.ClickHouseAggregateFunction.MAX,
@@ -84,12 +91,10 @@ public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseG
             ClickHouseAggregate aggregate = new ClickHouseAggregate(gen.generateExpressionWithColumns(columns, 6),
                     windowFunction);
             select.setFetchColumns(Arrays.asList(aggregate));
-
             QueryString = ClickHouseToStringVisitor.asString(select);
             QueryString += " SETTINGS aggregate_functions_null_for_empty = 1";
-
             select.setFetchColumns(Arrays.asList(new ClickHouseAliasOperation(aggregate, "aggr")));
-        }else{
+        } else {
             //转换成字符串
             QueryString = ClickHouseToStringVisitor.asString(select);
         }
@@ -101,55 +106,58 @@ public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseG
         SQLancerResultSet rs2;
 
         try {
-            try{
-                Statement s = con.createStatement();
-                String changedatabase = "USE " + databaseName;
-                s.execute(changedatabase);
-                state.getState().logStatement(changedatabase);
-            } catch (SQLException e){
-                System.out.println("USE不成功");
-            }
+            Statement s = con.createStatement();
+            String changedatabase = "USE " + databaseName;
+            s.execute(changedatabase);
+            state.getState().logStatement(changedatabase);
             rs1 = q.executeAndGetLogged(state);
         } catch (Exception e) {
             throw new AssertionError(QueryString, e);
         }
         try {
-            try{
-                Statement s = con.createStatement();
-                String changedatabase = "USE " + databaseName + "1";
-                s.execute(changedatabase);
-                state.getState().logStatement(changedatabase);
-            } catch (SQLException e){
-                System.out.println("USE1不成功");
-            }
+
+            Statement s = con.createStatement();
+            String changedatabase = "USE " + databaseName + "1";
+            s.execute(changedatabase);
+            state.getState().logStatement(changedatabase);
             rs2 = q.executeAndGetLogged(state);
         } catch (Exception e) {
             throw new AssertionError(QueryString, e);
         }
 
-        if (rs1 != null){
-            while (rs1.next()) {
+        if (rs1 == null || !rs1.next()) {
+            firstCount = 0;
+            if (rs1 != null) rs1.close();
+        } else {
+            while (rs1 != null && rs1.next())
                 firstCount++;
-            }
-            rs1.close();
         }
-        if (rs2 != null){
-            while (rs2.next()) {
+        if (rs2 == null || !rs2.next()) {
+            secondCount = 0;
+            if (rs2 != null) rs2.close();
+        } else {
+            while (rs2 != null && rs2.next())
                 secondCount++;
-            }
-            rs2.close();
         }
-        //结果对比
-        if (firstCount ==0 && secondCount == 0) {
+        //空结果统计后抛出忽略异常
+        if (firstCount + secondCount == 0) {
             Main.nrEmptyRes.addAndGet(1);
             throw new IgnoreMeException();
-        }else {
+        }
+        //有结果则统计后进入比较
+        Main.nrNoneEmptyRes.addAndGet(1);
+        //对聚合函数比较内容，否则只比较个数
+        if (ifaggregate) {
+            if (!Objects.equals(rs1.getLong(0), rs2.getLong(0)))
+                throw new AssertionError(
+                        QueryString + ";\nIn database 1 -- " + rs1.getString(0) + "\nIn database 2 -- " + rs2.getString(0));
+        } else {
             if (firstCount != secondCount) {
                 throw new AssertionError(
-                        QueryString + ";\nIn database 1 -- " + firstCount + "\nIn database 1 -- " + secondCount);
-            }else{
-                Main.nrNoneEmptyRes.addAndGet(1);
+                        QueryString + ";\nIn database 1: --count " + firstCount + "\nIn database 1 --count " + secondCount);
             }
         }
+        rs1.close();
+        rs2.close();
     }
 }
