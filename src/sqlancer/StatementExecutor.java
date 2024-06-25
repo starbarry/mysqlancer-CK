@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sqlancer.common.query.Query;
-import sqlancer.common.query.SQLQueryAdapter;
 
 public class StatementExecutor<G extends GlobalState<?, ?, ?>, A extends AbstractAction<G>> {
     private final G globalState;

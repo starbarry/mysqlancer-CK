@@ -16,9 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.util.stream.IntStream.range;
 
 public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseGlobalState> {
 

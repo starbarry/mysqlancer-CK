@@ -1,9 +1,6 @@
 package sqlancer;
 
 import sqlancer.common.query.Query;
-import sqlancer.common.query.SQLQueryAdapter;
-
-import java.util.List;
 
 public interface AbstractAction<G> {
 

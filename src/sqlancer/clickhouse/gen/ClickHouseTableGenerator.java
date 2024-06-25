@@ -34,7 +34,6 @@ public class ClickHouseTableGenerator {
 
     //自定义对照建表表达式
     private final StringBuilder sb1 = new StringBuilder();
-    private final List<ClickHouseSchema.ClickHouseColumn> columns1 = new ArrayList<>();
 
     public ClickHouseTableGenerator(String tableName, ClickHouseProvider.ClickHouseGlobalState globalState) {
         this.tableName = tableName;

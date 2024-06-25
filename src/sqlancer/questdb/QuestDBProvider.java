@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
 import java.util.Properties;
 
 import com.google.auto.service.AutoService;
@@ -19,7 +18,6 @@ import sqlancer.SQLProviderAdapter;
 import sqlancer.StatementExecutor;
 import sqlancer.common.query.SQLQueryAdapter;
 import sqlancer.common.query.SQLQueryProvider;
-import sqlancer.common.query.SQLQueryProvider_diff;
 import sqlancer.questdb.QuestDBProvider.QuestDBGlobalState;
 import sqlancer.questdb.gen.QuestDBAlterIndexGenerator;
 import sqlancer.questdb.gen.QuestDBInsertGenerator;

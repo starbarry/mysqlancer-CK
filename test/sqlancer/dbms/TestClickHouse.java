@@ -7,11 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import sqlancer.Main;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 public class TestClickHouse {
 
