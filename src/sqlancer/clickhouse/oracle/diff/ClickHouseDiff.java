@@ -55,9 +55,9 @@ public class ClickHouseDiff implements TestOracle<ClickHouseProvider.ClickHouseG
                     .collect(Collectors.toList()));
         }
         gen.addColumns(columns);
-        //随机生成WHERE表达式，并转换为UInt8
-//        ClickHouseExpression randomWhereCondition = gen.generateExpressionWithColumns(columns, 5);
-        ClickHouseExpression randomWhereCondition = new ClickHouseUnaryFunctionOperation(gen.generateExpressionWithColumns(columns, 5),
+        //随机生成WHERE表达式，大概率转换为UInt8
+        ClickHouseExpression randomWhereCondition = gen.generateExpressionWithColumns(columns, 5);
+        if (!Randomly.getBooleanWithRatherLowProbability()) randomWhereCondition = new ClickHouseUnaryFunctionOperation(randomWhereCondition,
                 ClickHouseUnaryFunctionOperation.ClickHouseUnaryFunctionOperator.TOUINT8);
         //创建select对象
         ClickHouseSelect select = new ClickHouseSelect();

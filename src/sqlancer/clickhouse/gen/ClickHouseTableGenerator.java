@@ -159,7 +159,8 @@ public class ClickHouseTableGenerator {
                 sb.append(ClickHouseToStringVisitor.asString(expr_sampleby));
             }
             // Suppress index sanity checks https://github.com/sqlancer/sqlancer/issues/788
-            sb.append(" SETTINGS allow_suspicious_indices=1");
+            //设置索引粒度为1024-3072b。
+            sb.append(" SETTINGS allow_suspicious_indices=1, index_granularity=" + (Randomly.getPositiveOrZeroNonCachedInteger() % 8192 +8192));
             // TODO: PRIMARY KEY
         }
         if (engine1 == ClickHouseEngine.MergeTree || engine1 == ClickHouseEngine.AggregatingMergeTree) {
@@ -179,7 +180,7 @@ public class ClickHouseTableGenerator {
                 sb1.append(ClickHouseToStringVisitor.asString(expr_sampleby));
             }
             // Suppress index sanity checks https://github.com/sqlancer/sqlancer/issues/788
-            sb1.append(" SETTINGS allow_suspicious_indices=1");
+            sb1.append(" SETTINGS allow_suspicious_indices=1, index_granularity=" + (Randomly.getPositiveOrZeroNonCachedInteger() % 8192 +8192));
             // TODO: PRIMARY KEY
         }
     }
